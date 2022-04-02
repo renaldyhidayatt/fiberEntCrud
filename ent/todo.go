@@ -9,6 +9,7 @@ import (
 
 	"entgo.io/ent/dialect/sql"
 	"github.com/renaldyhidayatt/fiberEntCrud/ent/todo"
+	"github.com/renaldyhidayatt/fiberEntCrud/ent/users"
 )
 
 // Todo is the model entity for the Todo schema.
@@ -24,6 +25,33 @@ type Todo struct {
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	// UpdatedAt holds the value of the "updated_at" field.
 	UpdatedAt time.Time `json:"updated_at,omitempty"`
+	// Edges holds the relations/edges for other nodes in the graph.
+	// The values are being populated by the TodoQuery when eager-loading is set.
+	Edges       TodoEdges `json:"edges"`
+	users_todos *int
+}
+
+// TodoEdges holds the relations/edges for other nodes in the graph.
+type TodoEdges struct {
+	// Owner holds the value of the owner edge.
+	Owner *Users `json:"owner,omitempty"`
+	// loadedTypes holds the information for reporting if a
+	// type was loaded (or requested) in eager-loading or not.
+	loadedTypes [1]bool
+}
+
+// OwnerOrErr returns the Owner value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e TodoEdges) OwnerOrErr() (*Users, error) {
+	if e.loadedTypes[0] {
+		if e.Owner == nil {
+			// The edge owner was loaded in eager-loading,
+			// but was not found.
+			return nil, &NotFoundError{label: users.Label}
+		}
+		return e.Owner, nil
+	}
+	return nil, &NotLoadedError{edge: "owner"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -37,6 +65,8 @@ func (*Todo) scanValues(columns []string) ([]interface{}, error) {
 			values[i] = new(sql.NullString)
 		case todo.FieldCreatedAt, todo.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
+		case todo.ForeignKeys[0]: // users_todos
+			values[i] = new(sql.NullInt64)
 		default:
 			return nil, fmt.Errorf("unexpected column %q for type Todo", columns[i])
 		}
@@ -82,9 +112,21 @@ func (t *Todo) assignValues(columns []string, values []interface{}) error {
 			} else if value.Valid {
 				t.UpdatedAt = value.Time
 			}
+		case todo.ForeignKeys[0]:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for edge-field users_todos", value)
+			} else if value.Valid {
+				t.users_todos = new(int)
+				*t.users_todos = int(value.Int64)
+			}
 		}
 	}
 	return nil
+}
+
+// QueryOwner queries the "owner" edge of the Todo entity.
+func (t *Todo) QueryOwner() *UsersQuery {
+	return (&TodoClient{config: t.config}).QueryOwner(t)
 }
 
 // Update returns a builder for updating this Todo.

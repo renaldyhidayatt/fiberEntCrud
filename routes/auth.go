@@ -27,5 +27,6 @@ func NewAuthRoute(client *ent.Client, router *fiber.App) {
 	})
 
 	route.Post("/register", handler.HandlerRegister)
+	route.Post("/login", handler.HandlerLogin)
 
 }

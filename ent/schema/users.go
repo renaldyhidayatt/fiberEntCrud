@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"entgo.io/ent"
+	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 )
 
@@ -26,5 +27,7 @@ func (Users) Fields() []ent.Field {
 
 // Edges of the Users.
 func (Users) Edges() []ent.Edge {
-	return nil
+	return []ent.Edge{
+		edge.To("todos", Todo.Type),
+	}
 }

@@ -10,6 +10,7 @@ import (
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/renaldyhidayatt/fiberEntCrud/ent/todo"
 	"github.com/renaldyhidayatt/fiberEntCrud/ent/users"
 )
 
@@ -70,6 +71,21 @@ func (uc *UsersCreate) SetNillableUpdatedAt(t *time.Time) *UsersCreate {
 		uc.SetUpdatedAt(*t)
 	}
 	return uc
+}
+
+// AddTodoIDs adds the "todos" edge to the Todo entity by IDs.
+func (uc *UsersCreate) AddTodoIDs(ids ...int) *UsersCreate {
+	uc.mutation.AddTodoIDs(ids...)
+	return uc
+}
+
+// AddTodos adds the "todos" edges to the Todo entity.
+func (uc *UsersCreate) AddTodos(t ...*Todo) *UsersCreate {
+	ids := make([]int, len(t))
+	for i := range t {
+		ids[i] = t[i].ID
+	}
+	return uc.AddTodoIDs(ids...)
 }
 
 // Mutation returns the UsersMutation object of the builder.
@@ -267,6 +283,25 @@ func (uc *UsersCreate) createSpec() (*Users, *sqlgraph.CreateSpec) {
 			Column: users.FieldUpdatedAt,
 		})
 		_node.UpdatedAt = value
+	}
+	if nodes := uc.mutation.TodosIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   users.TodosTable,
+			Columns: []string{users.TodosColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: todo.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec
 }

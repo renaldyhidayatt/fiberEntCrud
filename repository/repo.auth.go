@@ -21,9 +21,8 @@ func NewRepositoryAuth(db *ent.Client) *repositoryAuth {
 	return &repositoryAuth{db: db}
 }
 
-func (r *repositoryAuth) EntityRegister(input *schemas.SchemaUsers) (*ent.Users, schemas.SchemaDatabaseError) {
+func (r *repositoryAuth) EntityRegister(context context.Context, input *schemas.SchemaUsers) (*ent.Users, schemas.SchemaDatabaseError) {
 	var userModel ent.Users
-	ctx := context.Background()
 
 	userModel.FirstName = input.FirstName
 	userModel.LastName = input.LastName
@@ -32,7 +31,7 @@ func (r *repositoryAuth) EntityRegister(input *schemas.SchemaUsers) (*ent.Users,
 
 	err := make(chan schemas.SchemaDatabaseError, 1)
 
-	_, error := r.db.Users.Query().Where(users.Email(input.Email)).Only(ctx)
+	_, error := r.db.Users.Query().Where(users.Email(input.Email)).Only(context)
 
 	if error != nil {
 		err <- schemas.SchemaDatabaseError{
@@ -44,7 +43,7 @@ func (r *repositoryAuth) EntityRegister(input *schemas.SchemaUsers) (*ent.Users,
 		return &userModel, <-err
 	}
 
-	_, errorCreate := r.db.Users.Create().SetFirstName(userModel.FirstName).SetLastName(userModel.LastName).SetEmail(userModel.Email).SetPassword(userModel.Password).Save(ctx)
+	_, errorCreate := r.db.Users.Create().SetFirstName(userModel.FirstName).SetLastName(userModel.LastName).SetEmail(userModel.Email).SetPassword(userModel.Password).Save(context)
 
 	if errorCreate != nil {
 		err <- schemas.SchemaDatabaseError{
@@ -57,4 +56,40 @@ func (r *repositoryAuth) EntityRegister(input *schemas.SchemaUsers) (*ent.Users,
 	err <- schemas.SchemaDatabaseError{}
 
 	return &userModel, <-err
+}
+
+func (r *repositoryAuth) EntityLogin(context context.Context, input *schemas.SchemaUsers) (*ent.Users, schemas.SchemaDatabaseError) {
+	var user ent.Users
+
+	user.Email = input.Email
+	user.Password = input.Password
+
+	err := make(chan schemas.SchemaDatabaseError, 1)
+
+	u, error := r.db.Users.Query().Where(users.Email(input.Email)).Only(context)
+
+	if error != nil {
+		err <- schemas.SchemaDatabaseError{
+			Code: fiber.StatusConflict,
+			Type: "error_register_01",
+		}
+		log.Fatalf("error %v", error)
+
+		return &user, <-err
+	}
+
+	checkPasswordMatch := pkg.ComparePassword(u.Password, input.Password)
+
+	if checkPasswordMatch != nil {
+		err <- schemas.SchemaDatabaseError{
+			Code: fiber.StatusBadRequest,
+			Type: "error_login_02",
+		}
+		return &user, <-err
+	}
+
+	err <- schemas.SchemaDatabaseError{}
+
+	return &user, <-err
+
 }

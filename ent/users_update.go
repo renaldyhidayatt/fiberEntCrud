@@ -11,6 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/renaldyhidayatt/fiberEntCrud/ent/predicate"
+	"github.com/renaldyhidayatt/fiberEntCrud/ent/todo"
 	"github.com/renaldyhidayatt/fiberEntCrud/ent/users"
 )
 
@@ -51,9 +52,45 @@ func (uu *UsersUpdate) SetPassword(s string) *UsersUpdate {
 	return uu
 }
 
+// AddTodoIDs adds the "todos" edge to the Todo entity by IDs.
+func (uu *UsersUpdate) AddTodoIDs(ids ...int) *UsersUpdate {
+	uu.mutation.AddTodoIDs(ids...)
+	return uu
+}
+
+// AddTodos adds the "todos" edges to the Todo entity.
+func (uu *UsersUpdate) AddTodos(t ...*Todo) *UsersUpdate {
+	ids := make([]int, len(t))
+	for i := range t {
+		ids[i] = t[i].ID
+	}
+	return uu.AddTodoIDs(ids...)
+}
+
 // Mutation returns the UsersMutation object of the builder.
 func (uu *UsersUpdate) Mutation() *UsersMutation {
 	return uu.mutation
+}
+
+// ClearTodos clears all "todos" edges to the Todo entity.
+func (uu *UsersUpdate) ClearTodos() *UsersUpdate {
+	uu.mutation.ClearTodos()
+	return uu
+}
+
+// RemoveTodoIDs removes the "todos" edge to Todo entities by IDs.
+func (uu *UsersUpdate) RemoveTodoIDs(ids ...int) *UsersUpdate {
+	uu.mutation.RemoveTodoIDs(ids...)
+	return uu
+}
+
+// RemoveTodos removes "todos" edges to Todo entities.
+func (uu *UsersUpdate) RemoveTodos(t ...*Todo) *UsersUpdate {
+	ids := make([]int, len(t))
+	for i := range t {
+		ids[i] = t[i].ID
+	}
+	return uu.RemoveTodoIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -187,6 +224,60 @@ func (uu *UsersUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Column: users.FieldPassword,
 		})
 	}
+	if uu.mutation.TodosCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   users.TodosTable,
+			Columns: []string{users.TodosColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: todo.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uu.mutation.RemovedTodosIDs(); len(nodes) > 0 && !uu.mutation.TodosCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   users.TodosTable,
+			Columns: []string{users.TodosColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: todo.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uu.mutation.TodosIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   users.TodosTable,
+			Columns: []string{users.TodosColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: todo.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if n, err = sqlgraph.UpdateNodes(ctx, uu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{users.Label}
@@ -230,9 +321,45 @@ func (uuo *UsersUpdateOne) SetPassword(s string) *UsersUpdateOne {
 	return uuo
 }
 
+// AddTodoIDs adds the "todos" edge to the Todo entity by IDs.
+func (uuo *UsersUpdateOne) AddTodoIDs(ids ...int) *UsersUpdateOne {
+	uuo.mutation.AddTodoIDs(ids...)
+	return uuo
+}
+
+// AddTodos adds the "todos" edges to the Todo entity.
+func (uuo *UsersUpdateOne) AddTodos(t ...*Todo) *UsersUpdateOne {
+	ids := make([]int, len(t))
+	for i := range t {
+		ids[i] = t[i].ID
+	}
+	return uuo.AddTodoIDs(ids...)
+}
+
 // Mutation returns the UsersMutation object of the builder.
 func (uuo *UsersUpdateOne) Mutation() *UsersMutation {
 	return uuo.mutation
+}
+
+// ClearTodos clears all "todos" edges to the Todo entity.
+func (uuo *UsersUpdateOne) ClearTodos() *UsersUpdateOne {
+	uuo.mutation.ClearTodos()
+	return uuo
+}
+
+// RemoveTodoIDs removes the "todos" edge to Todo entities by IDs.
+func (uuo *UsersUpdateOne) RemoveTodoIDs(ids ...int) *UsersUpdateOne {
+	uuo.mutation.RemoveTodoIDs(ids...)
+	return uuo
+}
+
+// RemoveTodos removes "todos" edges to Todo entities.
+func (uuo *UsersUpdateOne) RemoveTodos(t ...*Todo) *UsersUpdateOne {
+	ids := make([]int, len(t))
+	for i := range t {
+		ids[i] = t[i].ID
+	}
+	return uuo.RemoveTodoIDs(ids...)
 }
 
 // Select allows selecting one or more fields (columns) of the returned entity.
@@ -389,6 +516,60 @@ func (uuo *UsersUpdateOne) sqlSave(ctx context.Context) (_node *Users, err error
 			Value:  value,
 			Column: users.FieldPassword,
 		})
+	}
+	if uuo.mutation.TodosCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   users.TodosTable,
+			Columns: []string{users.TodosColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: todo.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uuo.mutation.RemovedTodosIDs(); len(nodes) > 0 && !uuo.mutation.TodosCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   users.TodosTable,
+			Columns: []string{users.TodosColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: todo.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uuo.mutation.TodosIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   users.TodosTable,
+			Columns: []string{users.TodosColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: todo.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	_node = &Users{config: uuo.config}
 	_spec.Assign = _node.assignValues

@@ -4,6 +4,7 @@ package ent
 
 import (
 	"context"
+	"database/sql/driver"
 	"errors"
 	"fmt"
 	"math"
@@ -12,6 +13,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/renaldyhidayatt/fiberEntCrud/ent/predicate"
+	"github.com/renaldyhidayatt/fiberEntCrud/ent/todo"
 	"github.com/renaldyhidayatt/fiberEntCrud/ent/users"
 )
 
@@ -24,6 +26,8 @@ type UsersQuery struct {
 	order      []OrderFunc
 	fields     []string
 	predicates []predicate.Users
+	// eager-loading edges.
+	withTodos *TodoQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -58,6 +62,28 @@ func (uq *UsersQuery) Unique(unique bool) *UsersQuery {
 func (uq *UsersQuery) Order(o ...OrderFunc) *UsersQuery {
 	uq.order = append(uq.order, o...)
 	return uq
+}
+
+// QueryTodos chains the current query on the "todos" edge.
+func (uq *UsersQuery) QueryTodos() *TodoQuery {
+	query := &TodoQuery{config: uq.config}
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := uq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := uq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(users.Table, users.FieldID, selector),
+			sqlgraph.To(todo.Table, todo.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, users.TodosTable, users.TodosColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(uq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
 }
 
 // First returns the first Users entity from the query.
@@ -241,11 +267,23 @@ func (uq *UsersQuery) Clone() *UsersQuery {
 		offset:     uq.offset,
 		order:      append([]OrderFunc{}, uq.order...),
 		predicates: append([]predicate.Users{}, uq.predicates...),
+		withTodos:  uq.withTodos.Clone(),
 		// clone intermediate query.
 		sql:    uq.sql.Clone(),
 		path:   uq.path,
 		unique: uq.unique,
 	}
+}
+
+// WithTodos tells the query-builder to eager-load the nodes that are connected to
+// the "todos" edge. The optional arguments are used to configure the query builder of the edge.
+func (uq *UsersQuery) WithTodos(opts ...func(*TodoQuery)) *UsersQuery {
+	query := &TodoQuery{config: uq.config}
+	for _, opt := range opts {
+		opt(query)
+	}
+	uq.withTodos = query
+	return uq
 }
 
 // GroupBy is used to group vertices by one or more fields/columns.
@@ -311,8 +349,11 @@ func (uq *UsersQuery) prepareQuery(ctx context.Context) error {
 
 func (uq *UsersQuery) sqlAll(ctx context.Context) ([]*Users, error) {
 	var (
-		nodes = []*Users{}
-		_spec = uq.querySpec()
+		nodes       = []*Users{}
+		_spec       = uq.querySpec()
+		loadedTypes = [1]bool{
+			uq.withTodos != nil,
+		}
 	)
 	_spec.ScanValues = func(columns []string) ([]interface{}, error) {
 		node := &Users{config: uq.config}
@@ -324,6 +365,7 @@ func (uq *UsersQuery) sqlAll(ctx context.Context) ([]*Users, error) {
 			return fmt.Errorf("ent: Assign called without calling ScanValues")
 		}
 		node := nodes[len(nodes)-1]
+		node.Edges.loadedTypes = loadedTypes
 		return node.assignValues(columns, values)
 	}
 	if err := sqlgraph.QueryNodes(ctx, uq.driver, _spec); err != nil {
@@ -332,6 +374,36 @@ func (uq *UsersQuery) sqlAll(ctx context.Context) ([]*Users, error) {
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
+
+	if query := uq.withTodos; query != nil {
+		fks := make([]driver.Value, 0, len(nodes))
+		nodeids := make(map[int]*Users)
+		for i := range nodes {
+			fks = append(fks, nodes[i].ID)
+			nodeids[nodes[i].ID] = nodes[i]
+			nodes[i].Edges.Todos = []*Todo{}
+		}
+		query.withFKs = true
+		query.Where(predicate.Todo(func(s *sql.Selector) {
+			s.Where(sql.InValues(users.TodosColumn, fks...))
+		}))
+		neighbors, err := query.All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, n := range neighbors {
+			fk := n.users_todos
+			if fk == nil {
+				return nil, fmt.Errorf(`foreign-key "users_todos" is nil for node %v`, n.ID)
+			}
+			node, ok := nodeids[*fk]
+			if !ok {
+				return nil, fmt.Errorf(`unexpected foreign-key "users_todos" returned %v for node %v`, *fk, n.ID)
+			}
+			node.Edges.Todos = append(node.Edges.Todos, n)
+		}
+	}
+
 	return nodes, nil
 }
 

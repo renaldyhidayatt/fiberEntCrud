@@ -6,6 +6,7 @@ require (
 	entgo.io/ent v0.10.1
 	github.com/gofiber/fiber/v2 v2.31.0
 	github.com/gofiber/jwt/v3 v3.2.9
+	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/joho/godotenv v1.4.0
 	github.com/lib/pq v1.10.4
 	github.com/sirupsen/logrus v1.8.1
@@ -18,7 +19,7 @@ require (
 	github.com/andybalholm/brotli v1.0.4 // indirect
 	github.com/apparentlymart/go-textseg/v13 v13.0.0 // indirect
 	github.com/go-openapi/inflect v0.19.0 // indirect
-	github.com/golang-jwt/jwt/v4 v4.4.0 // indirect
+	github.com/golang-jwt/jwt/v4 v4.4.1 // indirect
 	github.com/google/go-cmp v0.5.6 // indirect
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/hashicorp/hcl/v2 v2.10.0 // indirect

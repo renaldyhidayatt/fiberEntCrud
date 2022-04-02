@@ -19,6 +19,7 @@ func main() {
 	})
 
 	routes.NewAuthRoute(client, app)
+	routes.NewTodoRoute(client, app)
 
 	app.Listen(":5000")
 

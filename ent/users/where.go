@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqlgraph"
 	"github.com/renaldyhidayatt/fiberEntCrud/ent/predicate"
 )
 
@@ -727,6 +728,34 @@ func UpdatedAtLT(v time.Time) predicate.Users {
 func UpdatedAtLTE(v time.Time) predicate.Users {
 	return predicate.Users(func(s *sql.Selector) {
 		s.Where(sql.LTE(s.C(FieldUpdatedAt), v))
+	})
+}
+
+// HasTodos applies the HasEdge predicate on the "todos" edge.
+func HasTodos() predicate.Users {
+	return predicate.Users(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(TodosTable, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, TodosTable, TodosColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasTodosWith applies the HasEdge predicate on the "todos" edge with a given conditions (other predicates).
+func HasTodosWith(preds ...predicate.Todo) predicate.Users {
+	return predicate.Users(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(TodosInverseTable, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, TodosTable, TodosColumn),
+		)
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
 	})
 }
 

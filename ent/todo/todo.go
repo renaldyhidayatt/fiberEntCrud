@@ -19,8 +19,17 @@ const (
 	FieldCreatedAt = "created_at"
 	// FieldUpdatedAt holds the string denoting the updated_at field in the database.
 	FieldUpdatedAt = "updated_at"
+	// EdgeOwner holds the string denoting the owner edge name in mutations.
+	EdgeOwner = "owner"
 	// Table holds the table name of the todo in the database.
 	Table = "todos"
+	// OwnerTable is the table that holds the owner relation/edge.
+	OwnerTable = "todos"
+	// OwnerInverseTable is the table name for the Users entity.
+	// It exists in this package in order to avoid circular dependency with the "users" package.
+	OwnerInverseTable = "users"
+	// OwnerColumn is the table column denoting the owner relation/edge.
+	OwnerColumn = "users_todos"
 )
 
 // Columns holds all SQL columns for todo fields.
@@ -32,10 +41,21 @@ var Columns = []string{
 	FieldUpdatedAt,
 }
 
+// ForeignKeys holds the SQL foreign-keys that are owned by the "todos"
+// table and are not defined as standalone fields in the schema.
+var ForeignKeys = []string{
+	"users_todos",
+}
+
 // ValidColumn reports if the column name is valid (part of the table columns).
 func ValidColumn(column string) bool {
 	for i := range Columns {
 		if column == Columns[i] {
+			return true
+		}
+	}
+	for i := range ForeignKeys {
+		if column == ForeignKeys[i] {
 			return true
 		}
 	}
