@@ -5,7 +5,7 @@ import (
 	"log"
 
 	"github.com/renaldyhidayatt/fiberEntCrud/ent"
-	"github.com/renaldyhidayatt/fiberEntCrud/ent/user"
+	"github.com/renaldyhidayatt/fiberEntCrud/ent/users"
 	"github.com/renaldyhidayatt/fiberEntCrud/pkg"
 	"github.com/renaldyhidayatt/fiberEntCrud/schemas"
 
@@ -17,7 +17,7 @@ type repositoryAuth struct {
 }
 
 func NewRepositoryAuth(db *ent.Client) *repositoryAuth {
-	user.NameEQ("")
+
 	return &repositoryAuth{db: db}
 }
 
@@ -32,19 +32,19 @@ func (r *repositoryAuth) EntityRegister(input *schemas.SchemaUsers) (*ent.Users,
 
 	err := make(chan schemas.SchemaDatabaseError, 1)
 
-	_, error := r.db.Users.Query().Where(user.NameEQ(userModel.Email)).Only(ctx)
+	_, error := r.db.Users.Query().Where(users.Email(input.Email)).Only(ctx)
 
 	if error != nil {
 		err <- schemas.SchemaDatabaseError{
 			Code: fiber.StatusConflict,
 			Type: "error_register_01",
 		}
-		log.Fatal(error)
+		log.Fatalf("error %v", error)
 
 		return &userModel, <-err
 	}
 
-	_, errorCreate := r.db.Users.Create().SetFirstName(user.FirstName).SetLastName(user.LastName).SetEmail(user.Email).SetPassword(user.Password).Save(ctx)
+	_, errorCreate := r.db.Users.Create().SetFirstName(userModel.FirstName).SetLastName(userModel.LastName).SetEmail(userModel.Email).SetPassword(userModel.Password).Save(ctx)
 
 	if errorCreate != nil {
 		err <- schemas.SchemaDatabaseError{
