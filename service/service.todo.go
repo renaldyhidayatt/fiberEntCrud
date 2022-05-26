@@ -1,30 +1,59 @@
 package service
 
 import (
+	"context"
+
+	"github.com/gofiber/fiber/v2"
 	"github.com/renaldyhidayatt/fiberEntCrud/ent"
-	"github.com/renaldyhidayatt/fiberEntCrud/entity"
 	"github.com/renaldyhidayatt/fiberEntCrud/schemas"
 )
 
-type serviceTodo struct {
-	todo entity.EntityTodo
+type ServiceTodo struct {
+	db *ent.Client
 }
 
-func NewServiceTodo(todo entity.EntityTodo) *serviceTodo {
-	return &serviceTodo{todo: todo}
+func NewServiceTodo(db *ent.Client) *ServiceTodo {
+	return &ServiceTodo{db: db}
 }
 
-func (s *serviceTodo) EntityCreate(input *schemas.SchemaTodo) (*ent.Todo, schemas.SchemaDatabaseError) {
-	var schema schemas.SchemaTodo
-	schema.Title = input.Title
-	schema.Description = input.Description
+var ctx = context.Background()
 
-	res, err := s.todo.EntityCreate(&schema)
-	return res, err
+func (r *ServiceTodo) EntityCreate(input *schemas.SchemaTodo) (*ent.Todo, schemas.SchemaDatabaseError) {
+	var todoModel ent.Todo
+
+	todoModel.Title = input.Title
+	todoModel.Description = input.Description
+
+	err := make(chan schemas.SchemaDatabaseError, 1)
+
+	_, errorCreate := r.db.Todo.Create().SetTitle(todoModel.Title).SetDescription(todoModel.Description).Save(ctx)
+
+	if errorCreate != nil {
+		err <- schemas.SchemaDatabaseError{
+			Code: fiber.StatusForbidden,
+			Type: "error_create_01",
+		}
+		return &todoModel, <-err
+	}
+
+	err <- schemas.SchemaDatabaseError{}
+
+	return &todoModel, <-err
 }
 
-func (s *serviceTodo) EntityResults() (*[]ent.Todo, schemas.SchemaDatabaseError) {
-	res, err := s.todo.EntityResults()
+func (r *ServiceTodo) EntityResults() ([]*ent.Todo, schemas.SchemaDatabaseError) {
 
-	return res, err
+	err := make(chan schemas.SchemaDatabaseError, 1)
+
+	todos, error := r.db.Todo.Query().All(ctx)
+
+	if error != nil {
+		err <- schemas.SchemaDatabaseError{
+			Code: fiber.StatusForbidden,
+			Type: "error_results_01",
+		}
+		return nil, <-err
+	}
+
+	return todos, <-err
 }

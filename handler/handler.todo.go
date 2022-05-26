@@ -2,15 +2,15 @@ package handler
 
 import (
 	"github.com/gofiber/fiber/v2"
-	"github.com/renaldyhidayatt/fiberEntCrud/entity"
 	"github.com/renaldyhidayatt/fiberEntCrud/schemas"
+	"github.com/renaldyhidayatt/fiberEntCrud/service"
 )
 
 type handlerTodo struct {
-	todo entity.EntityTodo
+	todo *service.ServiceTodo
 }
 
-func NewHandlerTodo(todo entity.EntityTodo) *handlerTodo {
+func NewHandlerTodo(todo *service.ServiceTodo) *handlerTodo {
 	return &handlerTodo{todo: todo}
 }
 

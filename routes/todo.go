@@ -4,13 +4,11 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/renaldyhidayatt/fiberEntCrud/ent"
 	"github.com/renaldyhidayatt/fiberEntCrud/handler"
-	"github.com/renaldyhidayatt/fiberEntCrud/repository"
 	"github.com/renaldyhidayatt/fiberEntCrud/service"
 )
 
 func NewTodoRoute(client *ent.Client, router *fiber.App) {
-	repository := repository.NewRepositoryTodo(client)
-	service := service.NewServiceTodo(repository)
+	service := service.NewServiceTodo(client)
 	handler := handler.NewHandlerTodo(service)
 
 	route := router.Group("/api/todo")

@@ -5,20 +5,20 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt"
-	"github.com/renaldyhidayatt/fiberEntCrud/entity"
 	"github.com/renaldyhidayatt/fiberEntCrud/pkg"
 	"github.com/renaldyhidayatt/fiberEntCrud/schemas"
+	"github.com/renaldyhidayatt/fiberEntCrud/service"
 
 	"github.com/gofiber/fiber/v2"
 )
 
 type handlerAuth struct {
-	auth entity.EntityAuth
+	auth *service.ServiceAuth
 }
 
 var contexts = context.Background()
 
-func NewHandlerAuth(auth entity.EntityAuth) *handlerAuth {
+func NewHandlerAuth(auth *service.ServiceAuth) *handlerAuth {
 	return &handlerAuth{auth: auth}
 }
 

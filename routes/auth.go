@@ -1,8 +1,6 @@
 package routes
 
 import (
-	"github.com/renaldyhidayatt/fiberEntCrud/repository"
-
 	"github.com/renaldyhidayatt/fiberEntCrud/service"
 
 	"github.com/renaldyhidayatt/fiberEntCrud/handler"
@@ -13,8 +11,8 @@ import (
 )
 
 func NewAuthRoute(client *ent.Client, router *fiber.App) {
-	repository := repository.NewRepositoryAuth(client)
-	service := service.NewServiceAuth(repository)
+
+	service := service.NewServiceAuth(client)
 	handler := handler.NewHandlerAuth(service)
 
 	route := router.Group("/api/auth")

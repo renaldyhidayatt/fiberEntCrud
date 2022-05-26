@@ -1,4 +1,4 @@
-package repository
+package service
 
 import (
 	"context"
@@ -12,16 +12,16 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-type repositoryAuth struct {
+type ServiceAuth struct {
 	db *ent.Client
 }
 
-func NewRepositoryAuth(db *ent.Client) *repositoryAuth {
+func NewServiceAuth(db *ent.Client) *ServiceAuth {
 
-	return &repositoryAuth{db: db}
+	return &ServiceAuth{db: db}
 }
 
-func (r *repositoryAuth) EntityRegister(context context.Context, input *schemas.SchemaUsers) (*ent.Users, schemas.SchemaDatabaseError) {
+func (r *ServiceAuth) EntityRegister(context context.Context, input *schemas.SchemaUsers) (*ent.Users, schemas.SchemaDatabaseError) {
 	var userModel ent.Users
 
 	userModel.FirstName = input.FirstName
@@ -58,7 +58,7 @@ func (r *repositoryAuth) EntityRegister(context context.Context, input *schemas.
 	return &userModel, <-err
 }
 
-func (r *repositoryAuth) EntityLogin(context context.Context, input *schemas.SchemaUsers) (*ent.Users, schemas.SchemaDatabaseError) {
+func (r *ServiceAuth) EntityLogin(context context.Context, input *schemas.SchemaUsers) (*ent.Users, schemas.SchemaDatabaseError) {
 	var user ent.Users
 
 	user.Email = input.Email
