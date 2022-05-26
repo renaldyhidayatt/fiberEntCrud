@@ -2,12 +2,10 @@ package repository
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/renaldyhidayatt/fiberEntCrud/ent"
 	"github.com/renaldyhidayatt/fiberEntCrud/schemas"
-	"github.com/sirupsen/logrus"
 )
 
 type repositoryTodo struct {
@@ -18,7 +16,9 @@ func NewRepositoryTodo(db *ent.Client) *repositoryTodo {
 	return &repositoryTodo{db: db}
 }
 
-func (r *repositoryTodo) EntityCreate(context context.Context, input *schemas.SchemaTodo) (*ent.Todo, schemas.SchemaDatabaseError) {
+var ctx = context.Background()
+
+func (r *repositoryTodo) EntityCreate(input *schemas.SchemaTodo) (*ent.Todo, schemas.SchemaDatabaseError) {
 	var todoModel ent.Todo
 
 	todoModel.Title = input.Title
@@ -26,7 +26,7 @@ func (r *repositoryTodo) EntityCreate(context context.Context, input *schemas.Sc
 
 	err := make(chan schemas.SchemaDatabaseError, 1)
 
-	_, errorCreate := r.db.Todo.Create().SetTitle(todoModel.Title).SetDescription(todoModel.Description).Save(context)
+	_, errorCreate := r.db.Todo.Create().SetTitle(todoModel.Title).SetDescription(todoModel.Description).Save(ctx)
 
 	if errorCreate != nil {
 		err <- schemas.SchemaDatabaseError{
@@ -41,12 +41,11 @@ func (r *repositoryTodo) EntityCreate(context context.Context, input *schemas.Sc
 	return &todoModel, <-err
 }
 
-func (r *repositoryTodo) EntityResults(context context.Context) (*[]ent.Todo, schemas.SchemaDatabaseError) {
-	var TodoModel []ent.Todo
+func (r *repositoryTodo) EntityResults() ([]*ent.Todo, schemas.SchemaDatabaseError) {
 
 	err := make(chan schemas.SchemaDatabaseError, 1)
 
-	todo, error := r.db.Todo.Query().All(context)
+	todos, error := r.db.Todo.Query().All(ctx)
 
 	if error != nil {
 		err <- schemas.SchemaDatabaseError{
@@ -55,14 +54,6 @@ func (r *repositoryTodo) EntityResults(context context.Context) (*[]ent.Todo, sc
 		}
 		return nil, <-err
 	}
-	for i, _ := range todo {
 
-		TodoModel = append(TodoModel, *todo[i])
-
-		logrus.Info(todo[i])
-		fmt.Println(TodoModel)
-
-	}
-
-	return &TodoModel, <-err
+	return todos, <-err
 }

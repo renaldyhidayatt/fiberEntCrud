@@ -15,6 +15,7 @@ func NewHandlerTodo(todo entity.EntityTodo) *handlerTodo {
 }
 
 func (h *handlerTodo) HandlerCreate(c *fiber.Ctx) error {
+
 	var body schemas.SchemaTodo
 	if err := c.BodyParser(&body); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -23,7 +24,7 @@ func (h *handlerTodo) HandlerCreate(c *fiber.Ctx) error {
 		})
 	}
 
-	res, err := h.todo.EntityCreate(contexts, &body)
+	res, err := h.todo.EntityCreate(&body)
 
 	if err.Type == "error_create_01" {
 		return c.Status(fiber.StatusExpectationFailed).JSON(fiber.Map{
@@ -40,7 +41,7 @@ func (h *handlerTodo) HandlerCreate(c *fiber.Ctx) error {
 
 func (h *handlerTodo) HandlerResults(c *fiber.Ctx) error {
 
-	res, err := h.todo.EntityResults(contexts)
+	res, err := h.todo.EntityResults()
 
 	if err.Type == "error_results_01" {
 		return c.Status(fiber.StatusExpectationFailed).JSON(fiber.Map{
@@ -51,7 +52,7 @@ func (h *handlerTodo) HandlerResults(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"error": false,
 		"msg":   "Get todo success",
-		"data":  *res,
+		"data":  &res,
 	})
 
 }
