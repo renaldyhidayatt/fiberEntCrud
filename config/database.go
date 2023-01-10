@@ -11,7 +11,7 @@ import (
 	_ "github.com/lib/pq"
 )
 
-func Database() *ent.Client {
+func Database(context context.Context) (*ent.Client, error) {
 	dsn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable", pkg.GodotEnv("DB_HOST"), pkg.GodotEnv("DB_PORT"), pkg.GodotEnv("DB_USER"), pkg.GodotEnv("DB_PASSWORD"), pkg.GodotEnv("DB_NAME"))
 
 	client, err := ent.Open("postgres", dsn)
@@ -20,13 +20,12 @@ func Database() *ent.Client {
 		log.Fatalf(err.Error())
 	}
 
-	// ctx := context.Background()
-	if err := client.Schema.Create(context.Background()); err != nil {
+	fmt.Println("Connected to database successfully")
+	// defer client.Close()
+	if err := client.Schema.Create(context); err != nil {
 		log.Fatalf(err.Error())
 	}
 
-	// defer client.Close()
-
-	return client
+	return client, nil
 
 }

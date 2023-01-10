@@ -4,6 +4,8 @@ import (
 	"strconv"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/golang-jwt/jwt/v4"
+	"github.com/renaldyhidayatt/fiberEntCrud/pkg"
 	"github.com/renaldyhidayatt/fiberEntCrud/schemas"
 	"github.com/renaldyhidayatt/fiberEntCrud/services"
 )
@@ -17,6 +19,9 @@ func NewHandlerTodo(todo services.TodoService) *handlerTodo {
 }
 
 func (h *handlerTodo) HandlerCreate(c *fiber.Ctx) error {
+	token := c.Locals("user").(*jwt.Token)
+
+	id := pkg.ValidToken(token)
 
 	var body schemas.SchemaTodo
 	if err := c.BodyParser(&body); err != nil {
@@ -26,7 +31,7 @@ func (h *handlerTodo) HandlerCreate(c *fiber.Ctx) error {
 		})
 	}
 
-	res, err := h.todo.Create(body)
+	res, err := h.todo.Create(body, int(id))
 
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -92,6 +97,10 @@ func (h *handlerTodo) HandlerFindById(c *fiber.Ctx) error {
 func (h *handlerTodo) UpdateById(c *fiber.Ctx) error {
 	id := c.Params("id")
 
+	token := c.Locals("user").(*jwt.Token)
+
+	iduser := pkg.ValidToken(token)
+
 	idparam, err := strconv.Atoi(id)
 
 	if err != nil {
@@ -109,7 +118,7 @@ func (h *handlerTodo) UpdateById(c *fiber.Ctx) error {
 		})
 	}
 
-	res, err := h.todo.UpdateById(idparam, body)
+	res, err := h.todo.UpdateById(idparam, body, int(iduser))
 
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{

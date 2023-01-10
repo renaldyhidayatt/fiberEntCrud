@@ -25,19 +25,23 @@ func NewAuthRepository(db *ent.Client, context context.Context) *authRepository 
 
 func (r *authRepository) Register(input schemas.SchemaUsers) (*ent.Users, error) {
 
-	_, err := r.db.Users.Query().Where(users.EmailEQ(input.Email)).Only(r.context)
+	user, err := r.db.Users.Query().Where(users.EmailEQ(input.Email)).First(r.context)
 
 	if err != nil {
-		return nil, fmt.Errorf("failed query email %w", err)
+		return nil, fmt.Errorf("failed query email %s", err.Error())
 	}
 
-	row, err := r.db.Users.Create().SetFirstName(input.FirstName).SetLastName(input.LastName).SetEmail(input.Email).SetPassword(input.Password).Save(r.context)
+	if user.ID != 0 {
+		return nil, fmt.Errorf("email already exitst")
+	}
+
+	res, err := r.db.Users.Create().SetFirstName(input.FirstName).SetLastName(input.LastName).SetEmail(input.Email).SetPassword(pkg.HashPassword(input.Password)).Save(r.context)
 
 	if err != nil {
 		return nil, fmt.Errorf("failed create user %w", err)
 	}
 
-	return row, nil
+	return res, nil
 }
 
 func (r *authRepository) Login(input schemas.SchemaUsers) (*ent.Users, error) {

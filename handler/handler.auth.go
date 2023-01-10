@@ -3,7 +3,7 @@ package handler
 import (
 	"time"
 
-	"github.com/golang-jwt/jwt"
+	"github.com/golang-jwt/jwt/v4"
 	"github.com/renaldyhidayatt/fiberEntCrud/pkg"
 	"github.com/renaldyhidayatt/fiberEntCrud/schemas"
 	"github.com/renaldyhidayatt/fiberEntCrud/services"
@@ -34,7 +34,7 @@ func (h *handlerAuth) HandlerRegister(c *fiber.Ctx) error {
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error":  true,
-			"msg":    err,
+			"msg":    err.Error(),
 			"status": fiber.StatusBadRequest,
 		})
 	}

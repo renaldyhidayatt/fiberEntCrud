@@ -17,13 +17,13 @@ func NewTodoService(repository repository.TodoRepository) *todoService {
 	return &todoService{repository: repository}
 }
 
-func (s *todoService) Create(input schemas.SchemaTodo) (*ent.Todo, error) {
+func (s *todoService) Create(input schemas.SchemaTodo, iduser int) (*ent.Todo, error) {
 	var todoSchemas schemas.SchemaTodo
 
 	todoSchemas.Title = input.Title
 	todoSchemas.Description = input.Description
 
-	row, err := s.repository.Create(todoSchemas)
+	row, err := s.repository.Create(todoSchemas, iduser)
 
 	return row, err
 }
@@ -40,13 +40,13 @@ func (s *todoService) FindById(id int) (*ent.Todo, error) {
 	return row, err
 }
 
-func (s *todoService) UpdateById(id int, input schemas.SchemaTodo) (*ent.Todo, error) {
+func (s *todoService) UpdateById(id int, input schemas.SchemaTodo, iduser int) (*ent.Todo, error) {
 	var todoSchemas schemas.SchemaTodo
 
 	todoSchemas.Title = input.Title
 	todoSchemas.Description = input.Description
 
-	row, err := s.repository.UpdateById(id, todoSchemas)
+	row, err := s.repository.UpdateById(id, todoSchemas, iduser)
 
 	return row, err
 }

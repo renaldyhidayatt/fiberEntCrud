@@ -6,6 +6,7 @@ import (
 
 	"github.com/renaldyhidayatt/fiberEntCrud/ent"
 	"github.com/renaldyhidayatt/fiberEntCrud/ent/todo"
+	"github.com/renaldyhidayatt/fiberEntCrud/ent/users"
 	"github.com/renaldyhidayatt/fiberEntCrud/interfaces"
 	"github.com/renaldyhidayatt/fiberEntCrud/schemas"
 )
@@ -21,9 +22,9 @@ func NewTodoRepository(db *ent.Client, context context.Context) *todoRepository 
 	return &todoRepository{db: db, context: context}
 }
 
-func (r *todoRepository) Create(input schemas.SchemaTodo) (*ent.Todo, error) {
+func (r *todoRepository) Create(input schemas.SchemaTodo, iduser int) (*ent.Todo, error) {
 
-	row, err := r.db.Todo.Create().SetTitle(input.Title).SetDescription(input.Description).Save(r.context)
+	row, err := r.db.Todo.Create().SetTitle(input.Title).SetDescription(input.Description).SetOwnerID(iduser).Save(r.context)
 
 	if err != nil {
 		return nil, fmt.Errorf("failed create todo: %w", err)
@@ -34,7 +35,7 @@ func (r *todoRepository) Create(input schemas.SchemaTodo) (*ent.Todo, error) {
 
 func (r *todoRepository) Results() ([]*ent.Todo, error) {
 
-	todos, err := r.db.Todo.Query().All(r.context)
+	todos, err := r.db.Todo.Query().WithOwner(func(uq *ent.UsersQuery) { uq.Select(users.FieldFirstName, users.FieldLastName, users.FieldEmail) }).All(r.context)
 
 	if err != nil {
 		return nil, fmt.Errorf("failed results todo: %w", err)
@@ -44,7 +45,7 @@ func (r *todoRepository) Results() ([]*ent.Todo, error) {
 }
 
 func (r *todoRepository) FindById(id int) (*ent.Todo, error) {
-	todo, err := r.db.Todo.Query().Where(todo.IDEQ(id)).Only(r.context)
+	todo, err := r.db.Todo.Query().Where(todo.IDEQ(id)).WithOwner(func(uq *ent.UsersQuery) { uq.Select(users.FieldFirstName, users.FieldLastName, users.FieldEmail) }).Only(r.context)
 
 	if err != nil {
 		return nil, fmt.Errorf("failed results todo: %w", err)
@@ -53,14 +54,14 @@ func (r *todoRepository) FindById(id int) (*ent.Todo, error) {
 	return todo, nil
 }
 
-func (r *todoRepository) UpdateById(id int, input schemas.SchemaTodo) (*ent.Todo, error) {
+func (r *todoRepository) UpdateById(id int, input schemas.SchemaTodo, iduser int) (*ent.Todo, error) {
 	_, err := r.db.Todo.Query().Where(todo.IDEQ(id)).Only(r.context)
 
 	if err != nil {
 		return nil, fmt.Errorf("failed results todo: %w", err)
 	}
 
-	todo, err := r.db.Todo.UpdateOneID(id).SetTitle(input.Title).SetDescription(input.Description).Save(r.context)
+	todo, err := r.db.Todo.UpdateOneID(id).SetTitle(input.Title).SetDescription(input.Description).SetOwnerID(iduser).Save(r.context)
 
 	if err != nil {
 		return nil, fmt.Errorf("failed update todo: %w", err)
