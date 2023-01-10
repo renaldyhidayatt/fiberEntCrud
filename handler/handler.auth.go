@@ -1,24 +1,21 @@
 package handler
 
 import (
-	"context"
 	"time"
 
 	"github.com/golang-jwt/jwt"
 	"github.com/renaldyhidayatt/fiberEntCrud/pkg"
 	"github.com/renaldyhidayatt/fiberEntCrud/schemas"
-	"github.com/renaldyhidayatt/fiberEntCrud/service"
+	"github.com/renaldyhidayatt/fiberEntCrud/services"
 
 	"github.com/gofiber/fiber/v2"
 )
 
 type handlerAuth struct {
-	auth *service.ServiceAuth
+	auth services.AuthService
 }
 
-var contexts = context.Background()
-
-func NewHandlerAuth(auth *service.ServiceAuth) *handlerAuth {
+func NewHandlerAuth(auth services.AuthService) *handlerAuth {
 	return &handlerAuth{auth: auth}
 }
 
@@ -32,23 +29,21 @@ func (h *handlerAuth) HandlerRegister(c *fiber.Ctx) error {
 		})
 	}
 
-	_, errorCreate := h.auth.EntityRegister(contexts, &body)
+	row, err := h.auth.Register(body)
 
-	if errorCreate.Type == "error_register_01" {
-		return c.Status(fiber.StatusConflict).JSON(fiber.Map{
-			"msg": "Email already taken",
-		})
-
-	}
-	if errorCreate.Type == "error_register_02" {
-		return c.Status(fiber.StatusExpectationFailed).JSON(fiber.Map{
-			"msg": "Register new user account failed",
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error":  true,
+			"msg":    err,
+			"status": fiber.StatusBadRequest,
 		})
 	}
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"error": false,
-		"msg":   "Register new user account success",
+		"error":  false,
+		"msg":    "Register new user account success",
+		"data":   row,
+		"status": fiber.StatusCreated,
 	})
 
 }
@@ -62,17 +57,12 @@ func (h *handlerAuth) HandlerLogin(c *fiber.Ctx) error {
 		})
 	}
 
-	res, error := h.auth.EntityLogin(contexts, &body)
+	res, err := h.auth.Login(body)
 
-	if error.Type == "error_login_01" {
-		return c.Status(fiber.StatusExpectationFailed).JSON(fiber.Map{
-			"msg": "User account is not never registered",
-		})
-	}
-
-	if error.Type == "error_login_02" {
+	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"msg": "Email or password is wrong",
+			"error": true,
+			"msg":   err.Error(),
 		})
 	}
 

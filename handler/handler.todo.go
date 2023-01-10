@@ -1,16 +1,18 @@
 package handler
 
 import (
+	"strconv"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/renaldyhidayatt/fiberEntCrud/schemas"
-	"github.com/renaldyhidayatt/fiberEntCrud/service"
+	"github.com/renaldyhidayatt/fiberEntCrud/services"
 )
 
 type handlerTodo struct {
-	todo *service.ServiceTodo
+	todo services.TodoService
 }
 
-func NewHandlerTodo(todo *service.ServiceTodo) *handlerTodo {
+func NewHandlerTodo(todo services.TodoService) *handlerTodo {
 	return &handlerTodo{todo: todo}
 }
 
@@ -24,11 +26,12 @@ func (h *handlerTodo) HandlerCreate(c *fiber.Ctx) error {
 		})
 	}
 
-	res, err := h.todo.EntityCreate(&body)
+	res, err := h.todo.Create(body)
 
-	if err.Type == "error_create_01" {
-		return c.Status(fiber.StatusExpectationFailed).JSON(fiber.Map{
-			"msg": "Create new todo failed",
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": true,
+			"msg":   err.Error(),
 		})
 	}
 
@@ -41,11 +44,12 @@ func (h *handlerTodo) HandlerCreate(c *fiber.Ctx) error {
 
 func (h *handlerTodo) HandlerResults(c *fiber.Ctx) error {
 
-	res, err := h.todo.EntityResults()
+	res, err := h.todo.Results()
 
-	if err.Type == "error_results_01" {
-		return c.Status(fiber.StatusExpectationFailed).JSON(fiber.Map{
-			"msg": "Get todo failed",
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": true,
+			"msg":   err.Error(),
 		})
 	}
 
@@ -55,4 +59,96 @@ func (h *handlerTodo) HandlerResults(c *fiber.Ctx) error {
 		"data":  &res,
 	})
 
+}
+
+func (h *handlerTodo) HandlerFindById(c *fiber.Ctx) error {
+	id := c.Params("id")
+
+	idparam, err := strconv.Atoi(id)
+
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": true,
+			"msg":   err.Error(),
+		})
+	}
+
+	res, err := h.todo.FindById(idparam)
+
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": true,
+			"msg":   err.Error(),
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"error": false,
+		"msg":   "Get todo success",
+		"data":  &res,
+	})
+}
+
+func (h *handlerTodo) UpdateById(c *fiber.Ctx) error {
+	id := c.Params("id")
+
+	idparam, err := strconv.Atoi(id)
+
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": true,
+			"msg":   err.Error(),
+		})
+	}
+
+	var body schemas.SchemaTodo
+	if err := c.BodyParser(&body); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": true,
+			"msg":   err.Error(),
+		})
+	}
+
+	res, err := h.todo.UpdateById(idparam, body)
+
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": true,
+			"msg":   err.Error(),
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"error": false,
+		"msg":   "update todo success",
+		"data":  res,
+	})
+}
+
+func (h *handlerTodo) DeleteById(c *fiber.Ctx) error {
+
+	id := c.Params("id")
+
+	idparam, err := strconv.Atoi(id)
+
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": true,
+			"msg":   err.Error(),
+		})
+	}
+	res, err := h.todo.DeleteById(idparam)
+
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": true,
+			"msg":   err.Error(),
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"error": false,
+		"msg":   "delete todo success",
+		"data":  res,
+	})
 }

@@ -1,6 +1,8 @@
 package main
 
 import (
+	"context"
+
 	"github.com/renaldyhidayatt/fiberEntCrud/routes"
 
 	"github.com/renaldyhidayatt/fiberEntCrud/config"
@@ -18,8 +20,10 @@ func main() {
 		return c.Status(200).SendString("Hello World")
 	})
 
-	routes.NewAuthRoute(client, app)
-	routes.NewTodoRoute(client, app)
+	context := context.Background()
+
+	routes.NewAuthRoute(client, context, app)
+	routes.NewTodoRoute(client, context, app)
 
 	app.Listen(":5000")
 
